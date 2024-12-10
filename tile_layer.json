@@ -1,60 +1,32 @@
 {
-	"tile":[
+	"tile": [
 		{
-			"id":1,
-			"items":[
+			"items": [
 				{
-				"model":1,
-					"area":{
-						"from":{
-							"x": -6,
-							"y": -1
-						},
-
-						"to":{
-							"x": 6,
-							"y": 1
-						}
+					"model": 1,
+					"area": {
+						"from": {"x": 0, "y": 0},
+						"to": {"x": 8, "y": 20}
 					}
 				},
 				{
-				"model":1,
-					"area":{
-						"from":{
-							"x": 10,
-							"y": 4
-						},
-
-						"to":{
-							"x": 15,
-							"y": 4
-						}
+					"model": 2,
+					"area": {
+						"from": {"x": 10, "y": 0},
+						"to": {"x": 20, "y": 2}
 					}
 				}
 			]
 		}
 	],
-
-	"model":[
+	"model": [
 		{
 			"id": 1,
-			"name": "grass",
-			"atlas_position":{
-
-				"x":0,
-				"y":0
-
-			}
-		},{
+			"atlas_position": {"x": 0, "y": 0}
+		},
+		{
 			"id": 2,
-			"name": "dirt",
-			"atlas_position":{
-
-				"x":0,
-				"y":2
-
-			}
+			"atlas_position": {"x": 1, "y": 0}
 		}
 	]
-
 }
