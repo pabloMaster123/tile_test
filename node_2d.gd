@@ -76,19 +76,25 @@ func road_creation(json_data: Dictionary) -> void:
 	var border = []
 	var items = []
 	
-	var roads = []
+	var border_roads = {}
+	var roads = {}
 	
 	items = get_item_ids(json_data)
 	
 	for x in range(items.size()):
 		print(items[x])
-		border = get_border_positions_by_model(json_data, items[x])
+		border = get_border_positions_by_id(json_data, items[x])
 		# Generar un número aleatorio entero entre 0 y border.size() - 1
-		random_int = rng.randi_range(0, border.size() - 1)
-		roads.append(border[random_int])
+		random_int = rng.randi_range(0, border.size() - 2)
+		
+		print(border.size())
+		print(border.size())
+		
+		border_roads = {border[random_int]:border[random_int+1]}
+		
+		roads.merge(border_roads,true)
 	
-	for x in range(roads.size()):
-		set_tile_in_layer(tile_map_layer, roads[x], Vector2i(3, 0))
+	road_placer(roads)
 
 func get_item_ids(json_data: Dictionary) -> Array:
 	var item_ids = []
@@ -104,7 +110,11 @@ func get_item_ids(json_data: Dictionary) -> Array:
 	return item_ids
 
 # Encuentra las posiciones de los bordes dentro de las áreas de un modelo específico
-func get_border_positions_by_model(json_data: Dictionary, model_id: int) -> Array:
+func get_border_positions_by_id(json_data: Dictionary, model_id: int) -> Array:
+	var rng = RandomNumberGenerator.new()
+	
+	var random_int = rng.randi_range(1,4)
+	
 	var borders = []
 
 	# Iterar sobre los mosaicos y sus áreas
@@ -115,25 +125,67 @@ func get_border_positions_by_model(json_data: Dictionary, model_id: int) -> Arra
 				var area_from = Vector2i(item["area"]["from"]["x"], item["area"]["from"]["y"])
 				var area_to = Vector2i(item["area"]["to"]["x"], item["area"]["to"]["y"])
 
-				# Agregar posiciones de los bordes
-				# Bordes horizontales
-				for x in range(area_from.x, area_to.x + 1):
-					borders.append(Vector2i(x, area_from.y))  # Borde superior
-					borders.append(Vector2i(x, area_to.y))    # Borde inferior
+				match random_int:
+					1:
+						print("Borde superior")
+						for x in range(area_from.x, area_to.x + 1): 	
+							borders.append(Vector2i(x, area_from.y))  # Borde superior	
+					2:
+						print("Borde inferior")
+						for x in range(area_from.x, area_to.x + 1):
+							borders.append(Vector2i(x, area_to.y)) # Borde inferior
+					3:
+						print("Borde izquierdo")
+						for y in range(area_from.y + 1, area_to.y):  # Evitar duplicados en esquinas
+							borders.append(Vector2i(area_from.x, y))  # Borde izquierdo
+					4:
+						print("Borde derecho")
+						for y in range(area_from.y + 1, area_to.y):  # Evitar duplicados en esquinas
+							borders.append(Vector2i(area_to.x, y))    # Borde derecho
+	
+	print("Bordes generados para el modelo ID ", model_id, " : ", borders)
 
-				# Bordes verticales
-				for y in range(area_from.y + 1, area_to.y):  # Evitar duplicados en esquinas
-					borders.append(Vector2i(area_from.x, y))  # Borde izquierdo
-					borders.append(Vector2i(area_to.x, y))    # Borde derecho
-
-	# Devolver las posiciones de los bordes
 	return borders
+
+func road_placer(data: Dictionary) -> void:
+	for road_start in data.keys():
+			for road_end in data.keys():
+				var start_1 = Vector2(road_start.x, road_start.y)  # Convertir a Vector2
+				var end_1 = Vector2(road_end.x, road_end.y)        # Convertir a Vector2
+				
+				var start_2 = Vector2(data[road_start].x, data[road_start].y)  # Convertir a Vector2
+				var end_2 = Vector2(data[road_end].x, data[road_end].y)        # Convertir a Vector2
+				
+				var distance = (end_1 - start_1).length()      # Distancia total entre los puntos
+				var steps = int(distance)                      # Definir el número de pasos
+				
+				var distance_2 = (end_2 - start_2).length()      # Distancia total entre los puntos
+				var steps_2 = int(distance_2)  
+				
+				for i in range(steps + 1):                     # Iterar desde el inicio hasta el destino
+					var t = i / float(steps)                  # Progreso normalizado entre 0 y 1
+					var point = start_1.lerp(end_1, t)            # Interpolar la posición usando "lerp"
+					var point_int = Vector2i(point)           # Convertir de nuevo a Vector2i
+					set_tile_in_layer(tile_map_layer, point_int, Vector2i(0, 3))
+				
+				for i in range(steps_2 + 1):                     # Iterar desde el inicio hasta el destino
+					var t = i / float(steps_2)                  # Progreso normalizado entre 0 y 1
+					var point = start_2.lerp(end_2, t)            # Interpolar la posición usando "lerp"
+					var point_int = Vector2i(point)           # Convertir de nuevo a Vector2i
+					set_tile_in_layer(tile_map_layer, point_int, Vector2i(0, 3))
+
+		
 
 func set_tile_in_layer(layer: TileMapLayer, cell_position: Vector2i, atlas_position: Vector2i) -> void:
 	if not layer:
 		push_error("Layer no válido")
 		return
 	# Colocar el mosaico si la celda está libre
+	# Verificar si la celda ya tiene un mosaico
+	if layer.get_cell_source_id(cell_position) != -1:
+		print("Celda ya ocupada en", cell_position)
+		return
+		
 	if atlas_position != null:
 		layer.set_cell(cell_position, 0, atlas_position)
 		print("Mosaico colocado en celda ", cell_position, " con atlas ", atlas_position)
