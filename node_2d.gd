@@ -150,31 +150,41 @@ func get_border_positions_by_id(json_data: Dictionary, model_id: int) -> Array:
 func road_placer(data: Dictionary) -> void:
 	for road_start in data.keys():
 			for road_end in data.keys():
-				var start_1 = Vector2(road_start.x, road_start.y)  # Convertir a Vector2
-				var end_1 = Vector2(road_end.x, road_end.y)        # Convertir a Vector2
+				var position_1 = VectorConverter(road_start, road_end)  # Convertir a Vector2
 				
-				var start_2 = Vector2(data[road_start].x, data[road_start].y)  # Convertir a Vector2
-				var end_2 = Vector2(data[road_end].x, data[road_end].y)        # Convertir a Vector2
+				var position_2 = VectorConverter(data[road_start], data[road_end])  # Convertir a Vector2
 				
-				var distance = (end_1 - start_1).length()      # Distancia total entre los puntos
+				var distance = (position_1[1] - position_1[0]).length()      # Distancia total entre los puntos
 				var steps = int(distance)                      # Definir el número de pasos
 				
-				var distance_2 = (end_2 - start_2).length()      # Distancia total entre los puntos
+				var distance_2 = (position_2[1] - position_1[0]).length()      # Distancia total entre los puntos
 				var steps_2 = int(distance_2)  
 				
-				for i in range(steps + 1):                     # Iterar desde el inicio hasta el destino
-					var t = i / float(steps)                  # Progreso normalizado entre 0 y 1
-					var point = start_1.lerp(end_1, t)            # Interpolar la posición usando "lerp"
-					var point_int = Vector2i(point)           # Convertir de nuevo a Vector2i
-					set_tile_in_layer(tile_map_layer, point_int, Vector2i(0, 3))
+				conectingDots(position_1,distance,steps)
 				
-				for i in range(steps_2 + 1):                     # Iterar desde el inicio hasta el destino
-					var t = i / float(steps_2)                  # Progreso normalizado entre 0 y 1
-					var point = start_2.lerp(end_2, t)            # Interpolar la posición usando "lerp"
-					var point_int = Vector2i(point)           # Convertir de nuevo a Vector2i
-					set_tile_in_layer(tile_map_layer, point_int, Vector2i(0, 3))
+				conectingDots(position_2,distance_2,steps_2)
 
-		
+
+func VectorConverter(start_position: Vector2i,end_position: Vector2i) -> Array:
+	
+	var vector2 = []
+	
+	var start = Vector2(start_position.x, start_position.y)  # Convertir a Vector2
+	
+	vector2.append(start)
+	
+	var end = Vector2(end_position.x, end_position.y)        # Convertir a Vector2
+	
+	vector2.append(end)
+	
+	return vector2
+
+func conectingDots(positions:Array,distance:int,steps:int) -> void:
+	for i in range(steps + 1):                     # Iterar desde el inicio hasta el destino
+		var t = i / float(steps)                  # Progreso normalizado entre 0 y 1
+		var point = positions[0].lerp(positions[1], t)            # Interpolar la posición usando "lerp"
+		var point_int = Vector2i(point)           # Convertir de nuevo a Vector2i
+		set_tile_in_layer(tile_map_layer, point_int, Vector2i(0, 3))
 
 func set_tile_in_layer(layer: TileMapLayer, cell_position: Vector2i, atlas_position: Vector2i) -> void:
 	if not layer:
@@ -183,7 +193,7 @@ func set_tile_in_layer(layer: TileMapLayer, cell_position: Vector2i, atlas_posit
 	# Colocar el mosaico si la celda está libre
 	# Verificar si la celda ya tiene un mosaico
 	if layer.get_cell_source_id(cell_position) != -1:
-		print("Celda ya ocupada en", cell_position)
+		print("Celda ya ocupada en ", cell_position)
 		return
 		
 	if atlas_position != null:
