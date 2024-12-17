@@ -94,7 +94,29 @@ func road_creation(json_data: Dictionary) -> void:
 		
 		roads.merge(border_roads,true)
 	
-	road_placer(roads)
+	# Iterar sobre cada clave en el diccionario 'roads'
+	for x in roads.keys():
+		var referencia = Vector2(x)  # Convertimos x a Vector2
+		var distancia_minima = INF   # Empezamos con una distancia grande
+		var nodo_mas_cercano = null  # Variable para almacenar el nodo más cercano
+		
+		for y in roads.keys():
+			if x == y:
+				continue  # Evitar comparar el mismo punto con sí mismo
+			
+			# Calcular la distancia entre 'x' y 'y'
+			var distancia_actual = referencia.distance_to(Vector2(y))
+			
+			# Actualizar el nodo más cercano si la distancia es menor
+			if distancia_actual < distancia_minima:
+				distancia_minima = distancia_actual
+				nodo_mas_cercano = y
+		
+		# Si encontramos un nodo más cercano, llamamos a la función road_placer
+		if nodo_mas_cercano:
+			road_placer(x, nodo_mas_cercano, roads[x], roads[nodo_mas_cercano])
+
+
 
 func get_item_ids(json_data: Dictionary) -> Array:
 	var item_ids = []
@@ -147,43 +169,27 @@ func get_border_positions_by_id(json_data: Dictionary, model_id: int) -> Array:
 
 	return borders
 
-func road_placer(data: Dictionary) -> void:
-	for road_start in data.keys():
-			for road_end in data.keys():
-				var position_1 = VectorConverter(road_start, road_end)  # Convertir a Vector2
-				
-				var position_2 = VectorConverter(data[road_start], data[road_end])  # Convertir a Vector2
-				
-				var distance = (position_1[1] - position_1[0]).length()      # Distancia total entre los puntos
-				var steps = int(distance)                      # Definir el número de pasos
-				
-				var distance_2 = (position_2[1] - position_1[0]).length()      # Distancia total entre los puntos
-				var steps_2 = int(distance_2)  
-				
-				conectingDots(position_1,distance,steps)
-				
-				conectingDots(position_2,distance_2,steps_2)
+func road_placer(start_1: Vector2i, end_1: Vector2i,start_2: Vector2i, end_2: Vector2i) -> void:
+			# Convertir posiciones
+	var position_1 = VectorConverter(start_1, end_1)
+	var position_2 = VectorConverter(start_2, end_2)
+			
+			# Calcular pasos
+	var steps_1 = int((position_1[1] - position_1[0]).length())
+	var steps_2 = int((position_2[1] - position_2[0]).length())
+	
+	# Dibujar caminos
+	conectingDots(position_1, steps_1)
+	conectingDots(position_2, steps_2)
 
-
-func VectorConverter(start_position: Vector2i,end_position: Vector2i) -> Array:
+				
+func VectorConverter(start_position: Vector2i, end_position: Vector2i) -> Array:
+	return [Vector2(start_position), Vector2(end_position)]
 	
-	var vector2 = []
-	
-	var start = Vector2(start_position.x, start_position.y)  # Convertir a Vector2
-	
-	vector2.append(start)
-	
-	var end = Vector2(end_position.x, end_position.y)        # Convertir a Vector2
-	
-	vector2.append(end)
-	
-	return vector2
-
-func conectingDots(positions:Array,distance:int,steps:int) -> void:
-	for i in range(steps + 1):                     # Iterar desde el inicio hasta el destino
-		var t = i / float(steps)                  # Progreso normalizado entre 0 y 1
-		var point = positions[0].lerp(positions[1], t)            # Interpolar la posición usando "lerp"
-		var point_int = Vector2i(point)           # Convertir de nuevo a Vector2i
+func conectingDots(positions: Array, steps: int) -> void:
+	for i in range(steps + 1):  # Iterar desde el inicio hasta el destino
+		var t = i / float(steps)  # Progreso normalizado entre 0 y 1
+		var point_int = Vector2i(positions[0].lerp(positions[1], t))  # Interpolar y convertir a Vector2i
 		set_tile_in_layer(tile_map_layer, point_int, Vector2i(0, 3))
 
 func set_tile_in_layer(layer: TileMapLayer, cell_position: Vector2i, atlas_position: Vector2i) -> void:

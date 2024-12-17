@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://ddohv0r8blm41"]
+[gd_scene load_steps=6 format=3 uid="uid://ddohv0r8blm41"]
 
 [ext_resource type="Script" path="res://node_2d.gd" id="1_k6akb"]
 [ext_resource type="Texture2D" uid="uid://rgnkdtpnbq27" path="res://tile_map.png" id="2_efjrv"]
+[ext_resource type="PackedScene" uid="uid://c82l3sdw1bbbp" path="res://player_test.tscn" id="3_fantr"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_h2m7b"]
 texture = ExtResource("2_efjrv")
@@ -35,8 +36,15 @@ tile_size = Vector2i(32, 16)
 sources/0 = SubResource("TileSetAtlasSource_h2m7b")
 
 [node name="Node2D" type="Node2D"]
+position = Vector2(278, 120)
 script = ExtResource("1_k6akb")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 y_sort_enabled = true
 tile_set = SubResource("TileSet_v0owl")
+
+[node name="CharacterBody2D" parent="." instance=ExtResource("3_fantr")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+scale = Vector2(3.20194, -2.51499)
+zoom = Vector2(3, 3)
