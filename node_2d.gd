@@ -1,13 +1,13 @@
 extends Node2D
 
 @onready var tile_map_layer: TileMapLayer = $TileMapLayer
+@onready var character_body_2d: CharacterBody2D = $TileMapLayer/CharacterBody2D
 
-# Ruta al archivo JSON
 const JSON_PATH: String = "res://tile_layer.json"
 
 func _ready() -> void:
-	if tile_map_layer == null:
-		push_error("TileMapLayer no encontrado. Verifica la ruta o el nombre del nodo.")
+	if not tile_map_layer:
+		push_error("TileMapLayer no encontrado. Verifica la estructura del nodo.")
 		return
 
 	print("Cargando archivo JSON desde ", JSON_PATH)
@@ -16,12 +16,67 @@ func _ready() -> void:
 		print("Archivo JSON cargado correctamente")
 		process_tile_data(json_data)
 		road_creation(json_data)
+		place_player_in_area(json_data)
 	else:
 		push_error("Error al cargar el archivo JSON")
 
+func place_player_in_area(data: Dictionary) -> void:
+	var id = 0
+	var rng = RandomNumberGenerator.new()
+	var random_int = 0
+	
+	var pos_start = []
+	var pos_end = []
+	var items = []
+	
+	# Obtener IDs de los ítems
+	items = get_item_ids(data)
+	if items.size() == 0:
+		push_error("No se encontraron ítems en el JSON para colocar al jugador.")
+		return
+	
+	# Seleccionar un ID aleatorio
+	random_int = rng.randi_range(0, items.size() - 1)
+	id = items[random_int]
+	print("Este id " , id)
+	# Buscar el área correspondiente al ID seleccionado
+	var tile_data = data.get("tile", [])
+	for tile in tile_data:
+		for item in tile.get("items", []):
+			if item.get("id") == id:
+				var from_pos = Vector2(item["area"]["from"]["x"], item["area"]["from"]["y"])
+				var to_pos = Vector2(item["area"]["to"]["x"], item["area"]["to"]["y"])
+				
+				# Agregar las posiciones iniciales y finales a las listas
+				pos_start.append(from_pos)
+				pos_end.append(to_pos)
+	
+	# Seleccionar las posiciones inicial y final
+	var start_mid = pos_start[pos_start.size()/2]
+	var end_mid = pos_end[pos_end.size()/2]
+	
+	# Generar una posición aleatoria dentro del rango
+	var random_x = rng.randi_range(start_mid.x, end_mid.x)
+	var random_y = rng.randi_range(start_mid.y, end_mid.y)
+	
+	# Convertir directamente a una posición global
+	var position = tile_map_layer.global_transform.origin + Vector2(random_x, random_y)
+	
+	# Colocar al jugador
+	character_body_2d.global_position = position
+	print("Jugador colocado en el área: ", position)
+
+func get_item_ids(data: Dictionary) -> Array:
+	var items = []
+	var tile_data = data.get("tile", [])
+	for tile in tile_data:
+		for item in tile.get("items", []):
+			if item.has("id"):
+				items.append(item["id"])
+	return items
+
 func load_json(path: String) -> Dictionary:
 	if FileAccess.file_exists(path):
-		print("Archivo JSON encontrado en ", path)
 		var file = FileAccess.open(path, FileAccess.ModeFlags.READ)
 		var json_content = file.get_as_text()
 		file.close()
@@ -29,7 +84,6 @@ func load_json(path: String) -> Dictionary:
 		var json_parser = JSON.new()
 		var result = json_parser.parse(json_content)
 		if result == OK:
-			print("JSON parseado correctamente")
 			return json_parser.data
 		else:
 			push_error("Error al parsear JSON: " + str(result))
@@ -115,22 +169,6 @@ func road_creation(json_data: Dictionary) -> void:
 		# Si encontramos un nodo más cercano, llamamos a la función road_placer
 		if nodo_mas_cercano:
 			road_placer(x, nodo_mas_cercano, roads[x], roads[nodo_mas_cercano])
-
-
-
-func get_item_ids(json_data: Dictionary) -> Array:
-	var item_ids = []
-
-	# Iterar sobre los mosaicos y sus items
-	var tile_data = json_data.get("tile", [])
-	for tile in tile_data:
-		for item in tile.get("items", []):
-			var item_id = item.get("id", null) # Leer el csampo id
-			if item_id != null:
-				item_ids.append(item_id)
-
-	return item_ids
-
 # Encuentra las posiciones de los bordes dentro de las áreas de un modelo específico
 func get_border_positions_by_id(json_data: Dictionary, model_id: int) -> Array:
 	var rng = RandomNumberGenerator.new()
